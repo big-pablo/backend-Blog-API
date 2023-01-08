@@ -1,3 +1,5 @@
+using Blog.API.Models;
+using Microsoft.EntityFrameworkCore;
 using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -9,6 +11,10 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+//DB:
+var connection = builder.Configuration.GetConnectionString("DefaultConnection");
+builder.Services.AddDbContext<Context>(options => options.UseSqlServer(connection));
+
 //Сваггер отображение енамов как строк
 builder.Services.AddControllers().AddJsonOptions(options =>
 {
@@ -16,6 +22,10 @@ builder.Services.AddControllers().AddJsonOptions(options =>
 });
 
 var app = builder.Build();
+
+//DB init:
+using var serviceScope = app.Services.CreateScope();
+var dbContext = serviceScope.ServiceProvider.GetService<Context>();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

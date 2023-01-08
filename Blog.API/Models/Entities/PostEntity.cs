@@ -7,7 +7,7 @@
         public string Description { get; set; }
         public string ReadingTime { get; set; }
         public string Image { get; set; }
-        public UserEntity Author { get; set; }
+        public UserEntity User { get; set; }
         public List<UserEntity> UserLikes { get; set; }
         public List<TagEntity> Tags { get; set; }
 
