@@ -2274,19 +2274,19 @@
     ]
   },
   "packageFolders": {
-    "C:\\Users\\power\\.nuget\\packages\\": {}
+    "C:\\Users\\Leo Pavlov\\.nuget\\packages\\": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "D:\\C# Projects\\webNET-Hits-backend-aspnet-project-3\\Blog.API\\Blog.API.csproj",
+      "projectUniqueName": "D:\\web\\BlogAPI\\Blog.API\\Blog.API.csproj",
       "projectName": "Blog.API",
-      "projectPath": "D:\\C# Projects\\webNET-Hits-backend-aspnet-project-3\\Blog.API\\Blog.API.csproj",
-      "packagesPath": "C:\\Users\\power\\.nuget\\packages\\",
-      "outputPath": "D:\\C# Projects\\webNET-Hits-backend-aspnet-project-3\\Blog.API\\obj\\",
+      "projectPath": "D:\\web\\BlogAPI\\Blog.API\\Blog.API.csproj",
+      "packagesPath": "C:\\Users\\Leo Pavlov\\.nuget\\packages\\",
+      "outputPath": "D:\\web\\BlogAPI\\Blog.API\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
-        "C:\\Users\\power\\AppData\\Roaming\\NuGet\\NuGet.Config",
+        "C:\\Users\\Leo Pavlov\\AppData\\Roaming\\NuGet\\NuGet.Config",
         "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
       ],
       "originalTargetFrameworks": [

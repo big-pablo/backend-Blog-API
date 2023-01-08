@@ -9,6 +9,7 @@ namespace Blog.API.Models
         public DbSet<PostEntity> PostEntities { get; set; }
         public DbSet<TagEntity> TagEntities { get; set; }
         public DbSet<TokenEntity> TokenEntities { get; set; }
+        public DbSet<LikeEntity> LikeEntities { get; set; }
         public Context(DbContextOptions<Context> options) : base(options)
         {
         }
