@@ -1,6 +1,9 @@
 using Blog.API.Models;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using System.Text.Json.Serialization;
+using Blog.API;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -21,7 +24,39 @@ builder.Services.AddControllers().AddJsonOptions(options =>
     options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
 });
 
+//JWT:
+builder.Services.AddAuthorization();
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            // ,       
+            ValidateIssuer = true,
+            // ,  
+            ValidIssuer = JWTConfiguration.Issuer,
+            //     
+            ValidateAudience = true,
+            //   
+            ValidAudience = JWTConfiguration.Audience,
+            //     
+            ValidateLifetime = true,
+            //   
+            IssuerSigningKey = JWTConfiguration.GetSymmetricSecurityKey(),
+            //   
+            ValidateIssuerSigningKey = true,
+
+        };
+    });
+
+
+
 var app = builder.Build();
+
+//JWT init:
+app.UseAuthentication();
+app.UseAuthorization();
+
 
 //DB init:
 using var serviceScope = app.Services.CreateScope();
@@ -35,8 +70,6 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-
-app.UseAuthorization();
 
 app.MapControllers();
 
