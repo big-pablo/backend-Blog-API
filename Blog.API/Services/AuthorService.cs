@@ -1,0 +1,42 @@
+﻿using Blog.API.Models;
+using Blog.API.Models.DTOs;
+using Blog.API.Models.Entities;
+using Microsoft.EntityFrameworkCore;
+
+namespace Blog.API.Services
+{
+    public interface IAuthorService
+    {
+        public Task<List<AuthorDTO>> GetAuthors();
+    }
+
+    public class AuthorService:IAuthorService
+    {
+        private readonly Context _context;
+        public AuthorService(Context context)
+        {
+            _context = context;
+        }
+
+        public async Task<List<AuthorDTO>> GetAuthors()
+        {
+            List<UserEntity> userEntities = _context.UserEntities.Include(x => x.UserPosts).ToList();
+            List<AuthorDTO> authors = new List<AuthorDTO>();
+            foreach (UserEntity userEntity in userEntities)
+            {
+                int likedPostsAmount = _context.LikeEntities.Where(x => x.Id == userEntity.Id).ToList().Count();
+                int postsAmount = userEntity.UserPosts.Count();
+                authors.Add(new AuthorDTO()
+                {
+                    FullName = userEntity.FullName,
+                    BirthDate = userEntity.BirthDate,
+                    Gender = userEntity.Gender,
+                    Posts = postsAmount,
+                    Likes = likedPostsAmount,
+                    Created = null // Чтобы это заработало, надо в UserEntity добавить поле с датой создания аккаунта
+                });
+            }
+            return authors;
+        }
+    }
+}
