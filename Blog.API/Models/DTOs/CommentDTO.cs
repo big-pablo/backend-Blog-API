@@ -8,8 +8,8 @@ namespace Blog.API.Models.DTOs
         public string Id { get; set; }
         [MinLength(1)]
         public string Content { get; set; }
-        public DateTime ModifiedDate { get; set; }
-        public DateTime DeleteDate { get; set; }
+        public DateTime? ModifiedDate { get; set; }
+        public DateTime? DeleteDate { get; set; }
         [Required]
         public string AuthorId { get; set; }
         [Required]
@@ -17,6 +17,5 @@ namespace Blog.API.Models.DTOs
         public string Author { get; set; }
         [Required]
         public int SubComments { get; set; }
-
     }
 }

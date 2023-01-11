@@ -14,7 +14,7 @@ namespace Blog.API.Models.DTOs
         public string Description { get; set; }
         [Required]
         public int ReadingTime { get; set; }
-        public string Image { get; set; }
+        public string? Image { get; set; }
         [Required]
         public string AuthorId { get; set; }
         [Required]
