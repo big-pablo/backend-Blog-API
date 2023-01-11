@@ -17,6 +17,5 @@ namespace Blog.API.Models.DTOs
         public string Author { get; set; }
         [Required]
         public int SubComments { get; set; }
-
     }
 }
