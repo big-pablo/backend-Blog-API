@@ -21,7 +21,7 @@ namespace Blog.API.Controllers
         [HttpPost("register")]
         public async Task<ActionResult<TokenResponseDTO>> Register(UserRegisterDTO model)
         {
-            try
+            try //Здесь обработку ошибок переделать
             {
                 return await _authService.Register(model);
             }
@@ -34,7 +34,7 @@ namespace Blog.API.Controllers
 
         public async Task<ActionResult<TokenResponseDTO>> Login(LoginCredentialsDTO model)
         {
-            try
+            try   //Здесь обработку ошибок переделать
             {
                 return await _authService.Login(model);
             }
@@ -50,7 +50,7 @@ namespace Blog.API.Controllers
         {
             if (await _innerService.TokenIsInBlackList(HttpContext.Request.Headers)) return Unauthorized("The user is not authorized");
             var token = await _innerService.GetToken(HttpContext.Request.Headers);
-            try
+            try  //Здесь обработку ошибок переделать
             {
                 await _authService.Logout(token);
                 return Ok();

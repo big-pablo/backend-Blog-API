@@ -10,9 +10,11 @@ namespace Blog.API.Controllers
     public class CommentController:ControllerBase
     {
         private ICommentService _commentService;
-        public CommentController(ICommentService commentService)
+        private IInnerService _innerService;
+        public CommentController(ICommentService commentService, IInnerService innerService)
         {
             _commentService = commentService;
+            _innerService = innerService;
         }
         [HttpGet("{id}/tree")]
         public async Task<ActionResult<List<CommentDTO>>> GetNestedComments(string id)
@@ -21,21 +23,24 @@ namespace Blog.API.Controllers
         }
         [HttpPost("{id}/comment")]
         [Authorize]
-        public async Task<ActionResult> AddComment(string id, CreateCommentDTO commentDTO, string userId)
+        public async Task<ActionResult> AddComment(string id, CreateCommentDTO commentDTO)
         {
-            return Ok(_commentService.AddComment(id, commentDTO.ParentId, commentDTO.Content, userId));
+            if (await _innerService.TokenIsInBlackList(HttpContext.Request.Headers)) return Unauthorized("The user is not authorized");
+            return Ok(_commentService.AddComment(id, commentDTO.ParentId, commentDTO.Content, await _innerService.GetUserId(HttpContext.User)));
         }
         [HttpPut("{id}")]
         [Authorize]
         public async Task<ActionResult> EditComment(string commentId, string content)
         {
-            return Ok(_commentService.EditComment(commentId, content));
+            if (await _innerService.TokenIsInBlackList(HttpContext.Request.Headers)) return Unauthorized("The user is not authorized");
+            return Ok(_commentService.EditComment(commentId, content, await _innerService.GetUserId(HttpContext.User)));
         }
         [HttpDelete("{id}")]
         [Authorize]
         public async Task<ActionResult> DeleteComment(string commentId)
         {
-            return Ok(_commentService.DeleteComment(commentId));
+            if (await _innerService.TokenIsInBlackList(HttpContext.Request.Headers)) return Unauthorized("The user is not authorized");
+            return Ok(_commentService.DeleteComment(commentId, await _innerService.GetUserId(HttpContext.User)));
         }
     }
 }

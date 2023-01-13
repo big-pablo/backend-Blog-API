@@ -8,8 +8,8 @@ namespace Blog.API.Services
     {
         public Task<List<CommentDTO>> GetNestedComments(string id);
         public Task AddComment(string postId, string parentCommentId, string content, string userId);
-        public Task EditComment(string commentId, string content);
-        public Task DeleteComment(string commentId);
+        public Task EditComment(string commentId, string content, string userId);
+        public Task DeleteComment(string commentId, string userId);
     }
 
     public class CommentService:ICommentService
@@ -58,8 +58,12 @@ namespace Blog.API.Services
             _context.CommentEntities.Add(newCommentToAdd);
             _context.SaveChangesAsync();
         }
-        public async Task EditComment(string commentId, string content) //Проверку на то, что нужный юзер редачит коммент будет сделана в контроллере
+        public async Task EditComment(string commentId, string content, string userId) //Проверку на то, что нужный юзер редачит коммент будет сделана в контроллере
         {
+            if (_context.CommentEntities.Where(x => x.Id == commentId && x.User.Id == userId) == null)
+            {
+                //Вернуть forbidden
+            }
             CommentEntity commentToEdit = _context.CommentEntities.FirstOrDefault(x => x.Id == commentId);
             if (commentToEdit == null)
             {
@@ -70,8 +74,12 @@ namespace Blog.API.Services
             _context.CommentEntities.Update(commentToEdit);
             await _context.SaveChangesAsync();
         }
-        public async Task DeleteComment(string commentId)
+        public async Task DeleteComment(string commentId, string userId)
         {
+            if (_context.CommentEntities.Where(x => x.Id == commentId && x.User.Id == userId) == null)
+            {
+                //Вернуть forbidden
+            }
             CommentEntity commentToDelete = _context.CommentEntities.FirstOrDefault(x => x.Id == commentId);
             if (commentToDelete == null)
             {
