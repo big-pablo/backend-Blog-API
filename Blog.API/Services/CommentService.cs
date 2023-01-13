@@ -21,6 +21,10 @@ namespace Blog.API.Services
         }
         public async Task<List<CommentDTO>> GetNestedComments(string id)
         {
+            if (_context.CommentEntities.Where(x => x.Id == id) == null)
+            {
+                //Возвращаем notFound
+            }
             List<CommentEntity> nestedCommentsEntities = _context.CommentEntities.Where(x => x.ParentComment.Id == id).ToList();
             List<CommentDTO> commentDTOs = new List<CommentDTO>();
             foreach (CommentEntity nestedCommentEntity in nestedCommentsEntities)
@@ -38,7 +42,7 @@ namespace Blog.API.Services
             }
             return commentDTOs;
         }
-        public async Task AddComment(string postId, string parentCommentId, string content, string userId) //Здесь переделать под считывание айди юзера из хэдеров
+        public async Task AddComment(string postId, string parentCommentId, string content, string userId)
         {
             Guid id = Guid.NewGuid();
             CommentEntity newCommentToAdd = new CommentEntity()
@@ -46,7 +50,7 @@ namespace Blog.API.Services
                 Id = id.ToString(),
                 Post = _context.PostEntities.FirstOrDefault(x => x.Id == postId),
                 Content=content,
-                User = _context.UserEntities.FirstOrDefault(x => x.Id == userId), //Здесь сделать проверку на null юзера (и вообще везде)
+                User = _context.UserEntities.FirstOrDefault(x => x.Id == userId),
                 ParentComment = _context.CommentEntities.FirstOrDefault(x => x.Id == parentCommentId),
                 ModifiedDate = null,
                 DeleteDate = null
@@ -54,9 +58,13 @@ namespace Blog.API.Services
             _context.CommentEntities.Add(newCommentToAdd);
             _context.SaveChangesAsync();
         }
-        public async Task EditComment(string commentId, string content) //Проверить на юзера, чтобы ес чо forbidden дать
+        public async Task EditComment(string commentId, string content) //Проверку на то, что нужный юзер редачит коммент будет сделана в контроллере
         {
             CommentEntity commentToEdit = _context.CommentEntities.FirstOrDefault(x => x.Id == commentId);
+            if (commentToEdit == null)
+            {
+                //Возвращаем NotFound
+            }
             commentToEdit.Content = content;
             commentToEdit.ModifiedDate = DateTime.Now;
             _context.CommentEntities.Update(commentToEdit);
@@ -65,6 +73,10 @@ namespace Blog.API.Services
         public async Task DeleteComment(string commentId)
         {
             CommentEntity commentToDelete = _context.CommentEntities.FirstOrDefault(x => x.Id == commentId);
+            if (commentToDelete == null)
+            {
+                //Возвращаем NotFound
+            }
             commentToDelete.DeleteDate = DateTime.Now;
             commentToDelete.Content = "[Комментарий удалён]";
             _context.CommentEntities.Update(commentToDelete);

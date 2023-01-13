@@ -11,7 +11,7 @@ namespace Blog.API.Services
         public Task<string> GetUserId(ClaimsPrincipal principal);
         public Task<bool> TokenIsInBlackList(IHeaderDictionary headerDictionary);
     }
-    public class InnerService
+    public class InnerService:IInnerService
     {
         private readonly Context _context;
         public InnerService(Context context)

@@ -50,18 +50,29 @@ namespace Blog.API.Services
 
         public async Task<ActionResult<TokenResponseDTO>> Register(UserRegisterDTO model)
         {
-            var check = _context.UserEntities.FirstOrDefault(x => x.Email == (model.Email).ToString());
-            if (check != null) throw new Exception();
+            if (_context.UserEntities.FirstOrDefault(x => x.Email == model.Email) != null)
+            {
+                //Проверяем на уникальность email-a
+            }
+            if (_context.UserEntities.FirstOrDefault(x => x.FullName == model.FullName) != null)
+            {
+                //Проверяем на существование никнейма
+            }
+            if (model.BirthDate > DateTime.Now)
+            {
+                //Дата рождения позже чем сейчас
+            }
             var id = Guid.NewGuid();
             await _context.UserEntities.AddAsync(new UserEntity
             {
                 Id = id.ToString(),
                 FullName = model.FullName,
                 Password = model.Password,
-                Email = model.Email.ToString(),
+                Email = model.Email,
                 BirthDate = model.BirthDate,
                 Gender = model.Gender,
-                PhoneNumber = model.PhoneNumber
+                PhoneNumber = model.PhoneNumber,
+                AccountCreateDate = DateTime.Now
             });
 
             var jwt = GenerateJWT(model.Email, id.ToString());
@@ -73,10 +84,10 @@ namespace Blog.API.Services
 
         public async Task<ActionResult<TokenResponseDTO>> Login(LoginCredentialsDTO model)
         {
-            var user = _context.UserEntities.FirstOrDefault(x => x.Email == (model.Email).ToString() && x.Password == model.Password);
+            var user = _context.UserEntities.FirstOrDefault(x => x.Email == model.Email && x.Password == model.Password);
             if (user == null)
             {
-                throw new Exception();
+                //Здесь BadRequest отправляем
             }
             var jwt = GenerateJWT(Convert.ToString(model.Email), user.Id.ToString());
             var encodedJwt = new JwtSecurityTokenHandler().WriteToken(jwt);

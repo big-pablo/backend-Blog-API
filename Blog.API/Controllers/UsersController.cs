@@ -74,10 +74,8 @@ namespace Blog.API.Controllers
         public async Task<IActionResult> UpdateUserData(UserEditDTO model)
         {
             if (await _innerService.TokenIsInBlackList(HttpContext.Request.Headers)) return Unauthorized("The user is not authorized");
-            await _userService.UpdateUserProfile(await _innerService.GetUserId(HttpContext.User), model);
+                await _userService.UpdateUserProfile(await _innerService.GetUserId(HttpContext.User), model);
             return Ok();
         }
     }
-
-
 }

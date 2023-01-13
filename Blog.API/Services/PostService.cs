@@ -68,6 +68,10 @@ namespace Blog.API.Services
         public async Task<PostFullDTO> GetCertainPost(string id)
         {
             PostEntity postEntity = _context.PostEntities.Include(z => z.Tags).FirstOrDefault(x => x.Id == id);
+            if (postEntity == null)
+            {
+                //Возвращаем NotFound
+            }
             List<TagDTO> tagDTOs = new List<TagDTO>();
             foreach (TagEntity tagEntity in postEntity.Tags)
             {
@@ -111,6 +115,10 @@ namespace Blog.API.Services
         }
         public async Task AddLike(string postId, string userId)
         {
+            if (_context.LikeEntities.FirstOrDefault(x => x.Post.Id == postId && x.User.Id == userId) != null)
+            {
+                //Возвращаем BadRequest
+            }
             Guid id = Guid.NewGuid();
             LikeEntity likeToAdd = new LikeEntity()
             {
@@ -125,6 +133,10 @@ namespace Blog.API.Services
         public async Task RemoveLike(string postId, string userId)
         {
             LikeEntity likeToRemove = _context.LikeEntities.FirstOrDefault(x => x.Post.Id == postId && x.User.Id == userId);
+            if (likeToRemove == null)
+            {
+                //Возвращаем NotFound
+            }
             _context.LikeEntities.Remove(likeToRemove);
             _context.SaveChanges();
             return;

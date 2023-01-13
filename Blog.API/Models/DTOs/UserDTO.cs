@@ -17,6 +17,7 @@ namespace Blog.API.Models.DTOs
         [MinLength(1)]
         public string Email { get; set; }
         public string PhoneNumber { get; set; }
+        public DateTime AccountCreateDate { get; set; }
 
     }
 }

@@ -18,5 +18,6 @@ namespace Blog.API.Models.DTOs
         [Required]
         public GenderEnum Gender { get; set; }
         public string PhoneNumber { get; set; }
+        public DateTime AccountCreateDate { get; set; }
     }
 }
