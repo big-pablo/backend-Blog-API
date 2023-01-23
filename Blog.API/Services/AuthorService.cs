@@ -33,7 +33,7 @@ namespace Blog.API.Services
                     Gender = userEntity.Gender,
                     Posts = postsAmount,
                     Likes = likedPostsAmount,
-                    Created = null // Чтобы это заработало, надо в UserEntity добавить поле с датой создания аккаунта
+                    Created = userEntity.AccountCreateDate
                 });
             }
             return authors;

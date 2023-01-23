@@ -17,14 +17,18 @@ namespace Blog.API.Controllers
             _postService = postService;
             _innerService = innerService;
         }
+        //[Authorize]
         [HttpGet]
-        public async Task<ActionResult<List<PostDTO>>> GetPosts([FromQuery] List<string> tags, [FromQuery] string author, [FromQuery] int min, [FromQuery] int max, [FromQuery] PostSortingEnum sorting, [FromQuery] int page, [FromQuery] int size)
+        public async Task<ActionResult<List<PostDTO>>> GetPosts([FromQuery] List<string>? tags, string? author, [FromQuery] int? min, [FromQuery] int? max, [FromQuery] PostSortingEnum sorting, [FromQuery] int page=1, [FromQuery] int size = 6)
         {
-            return Ok(await _postService.GetPage(tags, author, min, max, sorting));
+            //if (await _innerService.TokenIsInBlackList(HttpContext.Request.Headers)) return Unauthorized("The user is not authorized");
+            return Ok(await _postService.GetPage(author, sorting, page, size, min, max, tags));
         }
+        [Authorize]
         [HttpGet("{id}")]
         public async Task<ActionResult<PostFullDTO>> GetCertainPost(string id)
         {
+            if (await _innerService.TokenIsInBlackList(HttpContext.Request.Headers)) return Unauthorized("The user is not authorized");
             return Ok(await _postService.GetCertainPost(id));
         }
         [Authorize]

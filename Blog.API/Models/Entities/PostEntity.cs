@@ -9,6 +9,6 @@
         public string? Image { get; set; }
         public UserEntity Author { get; set; }
         public List<TagEntity> Tags { get; set; }
-
+        public DateTime? Created { get; set; }
     }
 }

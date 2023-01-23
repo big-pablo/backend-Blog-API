@@ -26,7 +26,7 @@ builder.Services.AddScoped<IInnerService, InnerService>();
 var connection = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContext<Context>(options => options.UseSqlServer(connection));
 
-//Сваггер отображение енамов как строк
+
 builder.Services.AddControllers().AddJsonOptions(options =>
 {
     options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());

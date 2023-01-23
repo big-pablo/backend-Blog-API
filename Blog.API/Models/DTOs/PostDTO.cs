@@ -27,5 +27,6 @@ namespace Blog.API.Models.DTOs
         [Required]
         public int CommentsCount { get; set; }
         public List<TagDTO> Tags { get; set; }
+        public DateTime? Created { get; set; }
     }
 }

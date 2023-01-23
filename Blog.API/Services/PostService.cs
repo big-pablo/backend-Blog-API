@@ -9,7 +9,7 @@ namespace Blog.API.Services
 {
     public interface IPostService
     {
-        public Task<PostPagedListDTO> GetPage(List<string> tags, string author, int minReadingTime, int maxReadingTime, PostSortingEnum sorting);
+        public Task<PostPagedListDTO> GetPage(string author, PostSortingEnum sorting, int page, int size, int? minReadingTime, int? maxReadingTime, List<string>? tags);
         public Task<PostFullDTO> GetCertainPost(string id);
         public Task AddLike(string postId, string userId);
         public Task RemoveLike(string postId, string userId);
@@ -22,18 +22,58 @@ namespace Blog.API.Services
         {
             _context = context;
         }
-        public async Task<PostPagedListDTO> GetPage(List<string> tags, string author, int minReadingTime, int maxReadingTime, PostSortingEnum sorting)
+
+        private static List<PostDTO> Sorting(PostSortingEnum sorting, List<PostDTO> list)
+        {
+            if (sorting == PostSortingEnum.CreateAsc) list.Sort((first, second) => DateTime.Compare((DateTime)first.Created, (DateTime)second.Created));
+            if (sorting == PostSortingEnum.CreateDesc) list.Sort((first, second) => DateTime.Compare((DateTime)second.Created, (DateTime)first.Created));
+            if (sorting == PostSortingEnum.LikeAsc) list.Sort((first, second) => first.Likes.CompareTo(second.Likes));
+            if (sorting == PostSortingEnum.LikeDesc) list.Sort((first, second) => second.Likes.CompareTo(first.Likes));
+
+            return list;
+        }
+        private static bool PostContainsFilterTags(List<TagDTO> postTags, List<string> tagstoFilter)
+        {
+            var count = 0;
+            foreach (TagDTO tag in postTags)
+            {
+                if (tagstoFilter.Contains(tag.Name))
+                {
+                    count++;
+                }
+            }
+            if (count > 0)
+            {
+                return true;
+            }
+            return false;
+        }
+        public async Task<PostPagedListDTO> GetPage(string author, PostSortingEnum sorting, int page, int size, int? minReadingTime, int? maxReadingTime, List<string>? tags)
         {
             List<PostEntity> postEntites = _context.PostEntities.Include(x => x.Tags).Include(x => x.Author).ThenInclude(j => j.UserPosts).ToList();
-            var pagination = new PageInfoDTO()
+            if (minReadingTime == null)
             {
-                Current = "1",
-                Size = "1",
-                Count = postEntites.Count().ToString()
-            };
+                minReadingTime = 0;
+            }
+            if (maxReadingTime == null)
+            {
+                maxReadingTime = 2147483647;
+            }
+            if (author == null)
+            {
+                postEntites = postEntites.Where(x => x.ReadingTime <= maxReadingTime && x.ReadingTime >= minReadingTime).ToList();
+            }
+            else
+            {
+               postEntites = postEntites.Where(x => x.Author.FullName == author && x.ReadingTime < maxReadingTime && x.ReadingTime > minReadingTime).ToList();
+            }
+            if (postEntites.Count() == 0)
+            {
+                //return NotFound
+            }
             var postDTOs = new List<PostDTO>();
             foreach (PostEntity post in postEntites)
-            {
+            {   
                 List<CommentEntity> comments = _context.CommentEntities.Where(x => x.Post.Id == post.Id).ToList();
                 List<LikeEntity> likes = _context.LikeEntities.Where(x => x.Post.Id == post.Id).ToList();
                 List<TagDTO> tagList = new List<TagDTO>();
@@ -45,29 +85,69 @@ namespace Blog.API.Services
                         Name = tagEntity.Name
                     });
                 }
-                postDTOs.Add(new PostDTO()
+                if (PostContainsFilterTags(tagList, tags) && tags.Count > 0)
                 {
-                    Id = post.Id,
-                    Title = post.Title,
-                    Description = post.Description,
-                    ReadingTime = Convert.ToInt32(post.ReadingTime),
-                    Image = post.Image,
-                    AuthorId = post.Author.Id,
-                    Likes = likes.Count(),
-                    HasLike = false,
-                    CommentsCount = comments.Count(),
-                    Tags = tagList,
-                });
+                    postDTOs.Add(new PostDTO()
+                    {
+                        Id = post.Id,
+                        Title = post.Title,
+                        Description = post.Description,
+                        ReadingTime = Convert.ToInt32(post.ReadingTime),
+                        Image = post.Image,
+                        AuthorId = post.Author.Id,
+                        Author = post.Author.FullName,
+                        Likes = likes.Count(),
+                        HasLike = false,
+                        CommentsCount = comments.Count(),
+                        Tags = tagList,
+                        Created = post.Created
+                    }); ;
+                }
+                else if (tags.Count == 0)
+                {
+                    postDTOs.Add(new PostDTO()
+                    {
+                        Id = post.Id,
+                        Title = post.Title,
+                        Description = post.Description,
+                        ReadingTime = Convert.ToInt32(post.ReadingTime),
+                        Image = post.Image,
+                        AuthorId = post.Author.Id,
+                        Author = post.Author.FullName,
+                        Likes = likes.Count(),
+                        HasLike = false,
+                        CommentsCount = comments.Count(),
+                        Tags = tagList,
+                        Created = post.Created
+                    }); ;
+                }
             }
+            postDTOs = Sorting(sorting, postDTOs);
+            int i = 1;
+            List<PostDTO> pagedPosts = new List<PostDTO>();
+            foreach (PostDTO postDTO in postDTOs)
+            {
+                if (i > size * (page - 1) && i <= size * page)
+                {
+                    pagedPosts.Add(postDTO);
+                }
+                i++;
+            }
+            var pagination = new PageInfoDTO()
+            {
+                Current = page.ToString(),
+                Size = size.ToString(),
+                Count = postDTOs.Count().ToString()
+            };
             return new PostPagedListDTO()
             {
-                Posts = postDTOs,
+                Posts = pagedPosts,
                 Pagination = pagination
             };
         }
         public async Task<PostFullDTO> GetCertainPost(string id)
         {
-            PostEntity postEntity = _context.PostEntities.Include(z => z.Tags).FirstOrDefault(x => x.Id == id);
+            PostEntity postEntity = _context.PostEntities.Include(z => z.Tags).Include(x => x.Author).FirstOrDefault(x => x.Id == id);
             if (postEntity == null)
             {
                 //Возвращаем NotFound
@@ -109,7 +189,8 @@ namespace Blog.API.Services
                 HasLike = false,
                 CommentsCount = _context.CommentEntities.Where(x => x.Post == postEntity).ToList().Count(),
                 Tags = tagDTOs,
-                Comments = commentDTOs
+                Comments = commentDTOs,
+                Created = postEntity.Created
             };  
             return postFullDTOs;
         }
