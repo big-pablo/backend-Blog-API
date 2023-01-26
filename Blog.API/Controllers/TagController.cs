@@ -16,7 +16,14 @@ namespace Blog.API.Controllers
         [HttpGet]
         public async Task<ActionResult<List<TagEntity>>> GetTags()
         {
-            return (await _tagService.GetTags());
+            try
+            {
+                return Ok(await _tagService.GetTags());
+            }
+            catch (Exception exception)
+            {
+                return StatusCode(500, exception.Message);
+            }
         }
     }
 }

@@ -1,6 +1,8 @@
-﻿using Blog.API.Models;
+﻿using Blog.API.Exceptions;
+using Blog.API.Models;
 using Blog.API.Models.DTOs;
 using Blog.API.Models.Entities;
+using System.Text.RegularExpressions;
 
 namespace Blog.API.Services
 {
@@ -23,7 +25,7 @@ namespace Blog.API.Services
         {
             if (_context.CommentEntities.Where(x => x.Id == id) == null)
             {
-                //Возвращаем notFound
+                throw new NotFoundException("There is no such comment");
             }
             List<CommentEntity> nestedCommentsEntities = _context.CommentEntities.Where(x => x.ParentComment.Id == id).ToList();
             List<CommentDTO> commentDTOs = new List<CommentDTO>();
@@ -44,6 +46,15 @@ namespace Blog.API.Services
         }
         public async Task AddComment(string postId, string parentCommentId, string content, string userId)
         {
+            if (_context.CommentEntities.Where(x => x.Id == postId) == null)
+            {
+                throw new NotFoundException("There is no such comment");
+            }
+            string commentRegex = @"\ *";
+            if (Regex.IsMatch(content, commentRegex))
+            {
+                throw new ValidationException("Comment cannot be empty");
+            }
             Guid id = Guid.NewGuid();
             CommentEntity newCommentToAdd = new CommentEntity()
             {
@@ -62,12 +73,12 @@ namespace Blog.API.Services
         {
             if (_context.CommentEntities.Where(x => x.Id == commentId && x.User.Id == userId) == null)
             {
-                //Вернуть forbidden
+                throw new ForbiddenException();
             }
             CommentEntity commentToEdit = _context.CommentEntities.FirstOrDefault(x => x.Id == commentId);
             if (commentToEdit == null)
             {
-                //Возвращаем NotFound
+                throw new NotFoundException("There is no such comment");
             }
             commentToEdit.Content = content;
             commentToEdit.ModifiedDate = DateTime.Now;
@@ -78,12 +89,12 @@ namespace Blog.API.Services
         {
             if (_context.CommentEntities.Where(x => x.Id == commentId && x.User.Id == userId) == null)
             {
-                //Вернуть forbidden
+                throw new ForbiddenException();
             }
             CommentEntity commentToDelete = _context.CommentEntities.FirstOrDefault(x => x.Id == commentId);
             if (commentToDelete == null)
             {
-                //Возвращаем NotFound
+                throw new NotFoundException("There is no such comment");
             }
             commentToDelete.DeleteDate = DateTime.Now;
             commentToDelete.Content = "[Комментарий удалён]";

@@ -1,8 +1,11 @@
-﻿using Blog.API.Models.DTOs;
+﻿using Blog.API.Exceptions;
+using Blog.API.Models;
+using Blog.API.Models.DTOs;
 using Blog.API.Models.Enums;
 using Blog.API.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Reflection.Metadata.Ecma335;
 
 namespace Blog.API.Controllers
 {
@@ -17,35 +20,84 @@ namespace Blog.API.Controllers
             _postService = postService;
             _innerService = innerService;
         }
-        //[Authorize]
+        [Authorize]
         [HttpGet]
         public async Task<ActionResult<List<PostDTO>>> GetPosts([FromQuery] List<string>? tags, string? author, [FromQuery] int? min, [FromQuery] int? max, [FromQuery] PostSortingEnum sorting, [FromQuery] int page=1, [FromQuery] int size = 6)
         {
-            //if (await _innerService.TokenIsInBlackList(HttpContext.Request.Headers)) return Unauthorized("The user is not authorized");
-            return Ok(await _postService.GetPage(author, sorting, page, size, min, max, tags));
+            if (await _innerService.TokenIsInBlackList(HttpContext.Request.Headers)) return Unauthorized("The user is not authorized");
+
+            try
+            {
+                return Ok(await _postService.GetPage(author, sorting, page, size, min, max, tags));
+            }
+            catch (NotFoundException exception)
+            {
+                return NotFound(exception.Message);
+            }
+            catch (Exception exception)
+            {
+                return StatusCode(500, exception.Message);
+            }   
         }
         [Authorize]
         [HttpGet("{id}")]
         public async Task<ActionResult<PostFullDTO>> GetCertainPost(string id)
         {
             if (await _innerService.TokenIsInBlackList(HttpContext.Request.Headers)) return Unauthorized("The user is not authorized");
-            return Ok(await _postService.GetCertainPost(id));
+            try
+            {
+                return Ok(await _postService.GetCertainPost(id));
+            }
+            catch (NotFoundException exception)
+            {
+                return NotFound(exception.Message);
+            }
+            catch (Exception exception)
+            {
+                return StatusCode(500, exception.Message);
+            }
         }
         [Authorize]
         [HttpPost("{postId}/like")]
         public async Task<ActionResult> AddLike(string postId)
         {
             if (await _innerService.TokenIsInBlackList(HttpContext.Request.Headers)) return Unauthorized("The user is not authorized");
-            await _postService.AddLike(postId, await _innerService.GetUserId(HttpContext.User));
-            return Ok();
+            try
+            {
+                await _postService.AddLike(postId, await _innerService.GetUserId(HttpContext.User));
+                return Ok();
+            }
+            catch (NotFoundException exception)
+            {
+                return NotFound(exception.Message);
+            }
+            catch (ObjectExistsException exception)
+            {
+                return BadRequest(exception.Message);
+            }
+            catch (Exception exception)
+            {
+                return StatusCode(500, exception.Message);
+            }
         }
         [Authorize]
         [HttpDelete("{postId}/like")]
         public async Task<ActionResult> RemoveLike(string postId)
         {
             if (await _innerService.TokenIsInBlackList(HttpContext.Request.Headers)) return Unauthorized("The user is not authorized");
-            await _postService.RemoveLike(postId, await _innerService.GetUserId(HttpContext.User));
-            return Ok();
+            try
+            {
+                await _postService.RemoveLike(postId, await _innerService.GetUserId(HttpContext.User));
+                return Ok();
+            }
+            catch (NotFoundException exception)
+            {
+                return NotFound(exception.Message);
+            }
+            catch (Exception exception)
+            {
+                return StatusCode(500, exception.Message);
+            }
         }
     }
 }

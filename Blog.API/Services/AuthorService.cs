@@ -20,7 +20,7 @@ namespace Blog.API.Services
 
         public async Task<List<AuthorDTO>> GetAuthors()
         {
-            List<UserEntity> userEntities = _context.UserEntities.Include(x => x.UserPosts).ToList();
+            List<UserEntity> userEntities = _context.UserEntities.Include(x => x.UserPosts).Where(x => x.UserPosts.Count() > 0).ToList();
             List<AuthorDTO> authors = new List<AuthorDTO>();
             foreach (UserEntity userEntity in userEntities)
             {

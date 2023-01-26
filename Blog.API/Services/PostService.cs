@@ -1,4 +1,5 @@
-﻿using Blog.API.Models;
+﻿using Blog.API.Exceptions;
+using Blog.API.Models;
 using Blog.API.Models.DTOs;
 using Blog.API.Models.Entities;
 using Blog.API.Models.Enums;
@@ -67,10 +68,6 @@ namespace Blog.API.Services
             {
                postEntites = postEntites.Where(x => x.Author.FullName == author && x.ReadingTime < maxReadingTime && x.ReadingTime > minReadingTime).ToList();
             }
-            if (postEntites.Count() == 0)
-            {
-                //return NotFound
-            }
             var postDTOs = new List<PostDTO>();
             foreach (PostEntity post in postEntites)
             {   
@@ -133,6 +130,10 @@ namespace Blog.API.Services
                 }
                 i++;
             }
+            if (postDTOs.Count() == 0)
+            {
+                throw new NotFoundException("There are no posts with such parameters");
+            }
             var pagination = new PageInfoDTO()
             {
                 Current = page.ToString(),
@@ -150,7 +151,7 @@ namespace Blog.API.Services
             PostEntity postEntity = _context.PostEntities.Include(z => z.Tags).Include(x => x.Author).FirstOrDefault(x => x.Id == id);
             if (postEntity == null)
             {
-                //Возвращаем NotFound
+                throw new NotFoundException("There is no such post");
             }
             List<TagDTO> tagDTOs = new List<TagDTO>();
             foreach (TagEntity tagEntity in postEntity.Tags)
@@ -196,9 +197,13 @@ namespace Blog.API.Services
         }
         public async Task AddLike(string postId, string userId)
         {
+            if (_context.PostEntities.FirstOrDefault(x => x.Id == postId) == null)
+            {
+                throw new NotFoundException("There is no such post");
+            }
             if (_context.LikeEntities.FirstOrDefault(x => x.Post.Id == postId && x.User.Id == userId) != null)
             {
-                //Возвращаем BadRequest
+                throw new ObjectExistsException("Post is already liked");
             }
             Guid id = Guid.NewGuid();
             LikeEntity likeToAdd = new LikeEntity()
@@ -213,10 +218,14 @@ namespace Blog.API.Services
         }
         public async Task RemoveLike(string postId, string userId)
         {
+            if (_context.PostEntities.FirstOrDefault(x => x.Id == postId) == null)
+            {
+                throw new NotFoundException("There is no such post");
+            }
             LikeEntity likeToRemove = _context.LikeEntities.FirstOrDefault(x => x.Post.Id == postId && x.User.Id == userId);
             if (likeToRemove == null)
             {
-                //Возвращаем NotFound
+                throw new NotFoundException("No like to remove");
             }
             _context.LikeEntities.Remove(likeToRemove);
             _context.SaveChanges();

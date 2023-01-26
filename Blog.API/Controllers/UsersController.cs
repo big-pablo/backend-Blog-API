@@ -1,4 +1,5 @@
-﻿using Blog.API.Models.DTOs;
+﻿using Blog.API.Exceptions;
+using Blog.API.Models.DTOs;
 using Blog.API.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -21,26 +22,34 @@ namespace Blog.API.Controllers
         [HttpPost("register")]
         public async Task<ActionResult<TokenResponseDTO>> Register(UserRegisterDTO model)
         {
-            try //Здесь обработку ошибок переделать
+            try
             {
                 return await _authService.Register(model);
             }
-            catch
+            catch (ValidationException exception)
             {
-                return BadRequest("This mail is already in use");
+                return BadRequest(exception.Message);
+            }
+            catch (Exception exception)
+            {
+                return StatusCode(500, exception.Message);
             }
         }
         [HttpPost("login")]
 
         public async Task<ActionResult<TokenResponseDTO>> Login(LoginCredentialsDTO model)
         {
-            try   //Здесь обработку ошибок переделать
+            try
             {
                 return await _authService.Login(model);
             }
-            catch
+            catch (ValidationException exception)
             {
-                return BadRequest("Invalid username or password");
+                return BadRequest(exception.Message);
+            }
+            catch (Exception exception)
+            {
+                return StatusCode(500, exception.Message);
             }
         }
 
@@ -50,14 +59,14 @@ namespace Blog.API.Controllers
         {
             if (await _innerService.TokenIsInBlackList(HttpContext.Request.Headers)) return Unauthorized("The user is not authorized");
             var token = await _innerService.GetToken(HttpContext.Request.Headers);
-            try  //Здесь обработку ошибок переделать
+            try 
             {
                 await _authService.Logout(token);
                 return Ok();
             }
-            catch
+            catch (Exception exception)
             {
-                return BadRequest("The user is not authorized");
+                return StatusCode(500, exception.Message);
             }
         }
 
@@ -66,16 +75,38 @@ namespace Blog.API.Controllers
         public async Task<ActionResult<UserDTO>> GetUserData()
         {
             if (await _innerService.TokenIsInBlackList(HttpContext.Request.Headers)) return Unauthorized("The user is not authorized");
-            var response = await _userService.GetUserProfile(await _innerService.GetUserId(HttpContext.User));
-            return Ok(response);
+            try
+            {
+                var response = await _userService.GetUserProfile(await _innerService.GetUserId(HttpContext.User));
+                return Ok(response);
+            }
+            catch (NotFoundException exception)
+            {
+                return NotFound(exception.Message);
+            }
+            catch (Exception exception)
+            {
+                return StatusCode(500, exception.Message);
+            }
         }
         [HttpPut("profile")]
         [Authorize]
         public async Task<IActionResult> UpdateUserData(UserEditDTO model)
         {
             if (await _innerService.TokenIsInBlackList(HttpContext.Request.Headers)) return Unauthorized("The user is not authorized");
+            try
+            {
                 await _userService.UpdateUserProfile(await _innerService.GetUserId(HttpContext.User), model);
-            return Ok();
+                return Ok();
+            }
+            catch (ValidationException exception)
+            {
+                return BadRequest(exception.Message);
+            }
+            catch (Exception exception) 
+            {
+                return StatusCode(500, exception.Message);
+            }
         }
     }
 }

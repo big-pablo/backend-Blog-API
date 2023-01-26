@@ -1,4 +1,5 @@
-﻿using Blog.API.Models;
+﻿using Blog.API.Exceptions;
+using Blog.API.Models;
 using Blog.API.Models.DTOs;
 using Microsoft.AspNetCore.Mvc;
 using System.Text.RegularExpressions;
@@ -8,7 +9,7 @@ namespace Blog.API.Services
     public interface IUserService
     {
         public Task<ActionResult<UserDTO>> GetUserProfile(string userId);
-        public Task<ActionResult> UpdateUserProfile(string userId, UserEditDTO model);
+        public Task UpdateUserProfile(string userId, UserEditDTO model);
     }
     public class UserService:IUserService
     {
@@ -22,7 +23,7 @@ namespace Blog.API.Services
             var user = _context.UserEntities.FirstOrDefault(x => x.Id == userId);
             if (user == null)
             {
-                //Здесь вернём что-то, чтобы поймать это в контроллере и выкинуть NotFound
+                throw new NotFoundException("There is no such user");
             }
             return new UserDTO
             {
@@ -35,26 +36,31 @@ namespace Blog.API.Services
                 AccountCreateDate = user.AccountCreateDate
             };
         }
-        public async Task<ActionResult> UpdateUserProfile(string userId, UserEditDTO userEdit)
+        public async Task UpdateUserProfile(string userId, UserEditDTO userEdit)
         {
             var user = _context.UserEntities.FirstOrDefault(x => x.Id == userId);
-            if (user == null)
+            if (user == null) //Проверка на существование юзера
             {
-                //Здесь вернём что-то, чтобы поймать это в контроллере и выкинуть NotFound
+                throw new NotFoundException("There is no such user"); 
             }
             string emailRegex = @"^([\w\.\-]+)@([\w\-]+)((\.(\w){2,3})+)$";
-            if (!Regex.IsMatch(userEdit.Email, emailRegex))
+            if (!Regex.IsMatch(userEdit.Email, emailRegex)) //Проверка на формат имейла
             {
-                //Возвращаем что email невалидный
+                throw new ValidationException("Invalid email format");
             }
             string phoneRegex = @"\+7[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]";
-            if (!Regex.IsMatch(userEdit.PhoneNumber, phoneRegex))
+            if (!Regex.IsMatch(userEdit.PhoneNumber, phoneRegex)) //Проверка на формат номера телефона
             {
-                //Возвращаем что номер невалидный
+                throw new ValidationException("Invalid phone number format");
             }
-            //Проверка на уникальность мейла и никнейма
-            //А вот тут вопросики
-            //Если пикать из UserEntities, а данные не меняются, мы эту же самую энтити и будем пикать
+            if (_context.UserEntities.FirstOrDefault(x => x.Id != userId && x.Email == userEdit.Email) != null) //Проверка на уникальность имейла
+            {
+                throw new ValidationException("This email is already used");
+            }
+            if (_context.UserEntities.FirstOrDefault(x => x.Id != userId && x.FullName == userEdit.FullName) != null) //Проверка на уникальность никнейма
+            {
+                throw new ValidationException("This nickname is already used");
+            }
             user.FullName = userEdit.FullName;
             user.BirthDate = userEdit.BirthDate;
             user.Gender = userEdit.Gender;
@@ -62,9 +68,6 @@ namespace Blog.API.Services
             user.Email = userEdit.Email;
             _context.UserEntities.Update(user);
             await _context.SaveChangesAsync();
-            return new OkResult(); //Под вопросом необходимость возвращать OkResult() здесь
         }
-
-
     }
 }

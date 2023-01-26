@@ -18,7 +18,14 @@ namespace Blog.API.Controllers
         [HttpGet]
         public async Task<ActionResult<List<AuthorDTO>>> GetAuthors()
         {
-            return (await _authorService.GetAuthors());
+            try
+            {
+                return (await _authorService.GetAuthors());
+            }
+            catch (Exception exception)
+            {
+                return StatusCode(500, exception.Message);
+            }
         }
     }
 }

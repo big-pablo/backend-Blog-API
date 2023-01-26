@@ -1,4 +1,5 @@
-﻿using Blog.API.Models;
+﻿using Blog.API.Exceptions;
+using Blog.API.Models;
 using Blog.API.Models.DTOs;
 using Blog.API.Models.Entities;
 using Microsoft.AspNetCore.Identity;
@@ -6,6 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Text.RegularExpressions;
 
 namespace Blog.API.Services
 {
@@ -52,15 +54,20 @@ namespace Blog.API.Services
         {
             if (_context.UserEntities.FirstOrDefault(x => x.Email == model.Email) != null)
             {
-                //Проверяем на уникальность email-a
+                throw new ValidationException("This email is already used");
             }
             if (_context.UserEntities.FirstOrDefault(x => x.FullName == model.FullName) != null)
             {
-                //Проверяем на существование никнейма
+                throw new ValidationException("This nickname is already used");
             }
             if (model.BirthDate > DateTime.Now)
             {
-                //Дата рождения позже чем сейчас
+                throw new ValidationException("Your DOB can't be earlier that now");
+            }
+            string emailRegex = @"^([\w\.\-]+)@([\w\-]+)((\.(\w){2,3})+)$";
+            if (!Regex.IsMatch(model.Email, emailRegex))
+            {
+                throw new ValidationException("Invalid email format");
             }
             var id = Guid.NewGuid();
             await _context.UserEntities.AddAsync(new UserEntity
@@ -87,7 +94,7 @@ namespace Blog.API.Services
             var user = _context.UserEntities.FirstOrDefault(x => x.Email == model.Email && x.Password == model.Password);
             if (user == null)
             {
-                //Здесь BadRequest отправляем
+                throw new ValidationException("Invalid email or password");
             }
             var jwt = GenerateJWT(Convert.ToString(model.Email), user.Id.ToString());
             var encodedJwt = new JwtSecurityTokenHandler().WriteToken(jwt);
