@@ -151,6 +151,18 @@ namespace Blog.API.Services
                 Pagination = pagination
             };
         }
+        private int GetSubcommentsAmount(string parentId)
+        {
+            var currentChildren = _context.CommentEntities.Where(x => x.ParentComment.Id == parentId).Include(x => x.User).ToList();
+            int totalChildren = 0;
+            totalChildren += currentChildren.Count();
+            foreach (var child in currentChildren)
+            {
+                var nextChildren = GetSubcommentsAmount(child.Id);
+                totalChildren += nextChildren;
+            }
+            return totalChildren;
+        }
         public async Task<PostFullDTO> GetCertainPost(string id)
         {
             PostEntity postEntity = _context.PostEntities.Include(z => z.Tags).Include(x => x.Author).FirstOrDefault(x => x.Id == id);
@@ -167,7 +179,7 @@ namespace Blog.API.Services
                     Name = tagEntity.Name
                 });
             }
-            List<CommentEntity> commentEntities = _context.CommentEntities.Where(x => x.Post == postEntity && x.ParentComment == null).ToList();
+            List<CommentEntity> commentEntities = _context.CommentEntities.Where(x => x.Post == postEntity && x.ParentComment == null).Include(x => x.User).ToList();
             List<CommentDTO> commentDTOs = new List<CommentDTO>();
             foreach (CommentEntity commentEntity in commentEntities)
             {
@@ -179,7 +191,8 @@ namespace Blog.API.Services
                     DeleteDate = commentEntity.DeleteDate,
                     AuthorId = commentEntity.User.Id,
                     Author = commentEntity.User.FullName,
-                    SubComments = _context.CommentEntities.Where(x => x.Post == postEntity && x.ParentComment.Id == commentEntity.Id).ToList().Count()
+                    CreateDate = commentEntity.CreateDate,
+                    SubComments = GetSubcommentsAmount(commentEntity.Id)
                 }) ;
             }
             PostFullDTO postFullDTOs = new PostFullDTO()

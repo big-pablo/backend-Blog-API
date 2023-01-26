@@ -17,14 +17,21 @@ namespace Blog.API.Services
         {
             _context = context;
         }
-
+        private int AllPostLikes(List<PostEntity> posts)
+        {
+            int likesCount = 0;
+            foreach (var post in posts)
+            {
+                likesCount += _context.LikeEntities.Where(x => x.Post.Id == post.Id).Count();
+            }
+            return likesCount;
+        }
         public async Task<List<AuthorDTO>> GetAuthors()
         {
-            List<UserEntity> userEntities = _context.UserEntities.Include(x => x.UserPosts).Where(x => x.UserPosts.Count() > 0).ToList();
+            List<UserEntity> userEntities = _context.UserEntities.Include(x => x.UserPosts).Where(x => x.UserPosts.Count() > 0).OrderBy(x => x.FullName).ToList();
             List<AuthorDTO> authors = new List<AuthorDTO>();
             foreach (UserEntity userEntity in userEntities)
             {
-                int likedPostsAmount = _context.LikeEntities.Where(x => x.Id == userEntity.Id).ToList().Count();
                 int postsAmount = userEntity.UserPosts.Count();
                 authors.Add(new AuthorDTO()
                 {
@@ -32,7 +39,7 @@ namespace Blog.API.Services
                     BirthDate = userEntity.BirthDate,
                     Gender = userEntity.Gender,
                     Posts = postsAmount,
-                    Likes = likedPostsAmount,
+                    Likes = AllPostLikes(userEntity.UserPosts),
                     Created = userEntity.AccountCreateDate
                 });
             }

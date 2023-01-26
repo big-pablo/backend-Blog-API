@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Blog.API.Controllers
 {
-    [Route("/api/comment")]
+    [Route("/api")]
     [ApiController]
     public class CommentController:ControllerBase
     {
@@ -17,12 +17,12 @@ namespace Blog.API.Controllers
             _commentService = commentService;
             _innerService = innerService;
         }
-        [HttpGet("{id}/tree")]
+        [HttpGet("comment/{id}/tree")]
         public async Task<ActionResult<List<CommentDTO>>> GetNestedComments(string id)
         {
             try
             {
-                return Ok(_commentService.GetNestedComments(id));
+                return await _commentService.GetNestedComments(id);
             }
             catch (NotFoundException exception)
             {
@@ -33,7 +33,7 @@ namespace Blog.API.Controllers
                 return StatusCode(500, exception.Message);
             }
         }
-        [HttpPost("{id}/comment")]
+        [HttpPost("post/{id}/comment")]
         [Authorize]
         public async Task<ActionResult> AddComment(string id, CreateCommentDTO commentDTO)
         {
@@ -56,7 +56,7 @@ namespace Blog.API.Controllers
                 return StatusCode(500, exception.Message);
             }
         }
-        [HttpPut("{id}")]
+        [HttpPut("comment/{id}")]
         [Authorize]
         public async Task<ActionResult> EditComment(string id,[FromBody] EditCommentDTO content)
         {
@@ -68,18 +68,26 @@ namespace Blog.API.Controllers
             }
             catch (ForbiddenException exception)
             {
-                return Forbid(exception.Message);
+                return Forbid();
             }
             catch (NotFoundException exception)
             {
                 return NotFound(exception.Message);
+            }
+            catch (ObjectExistsException exception)
+            {
+                return BadRequest(exception.Message);
+            }
+            catch (ValidationException excepton)
+            {
+                return BadRequest(excepton.Message);
             }
             catch (Exception exception)
             {
                 return StatusCode(500, exception.Message);
             }
         }
-        [HttpDelete("{id}")]
+        [HttpDelete("comment/{id}")]
         [Authorize]
         public async Task<ActionResult> DeleteComment(string id)
         {
@@ -91,11 +99,15 @@ namespace Blog.API.Controllers
             }
             catch (ForbiddenException exception)
             {
-                return Forbid(exception.Message);
+                return Forbid();
             }
             catch (NotFoundException exception)
             {
                 return NotFound(exception.Message);
+            }
+            catch (ObjectExistsException exception)
+            {
+                return BadRequest(exception.Message);
             }
             catch (Exception exception)
             {

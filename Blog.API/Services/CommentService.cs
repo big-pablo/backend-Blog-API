@@ -3,6 +3,7 @@ using Blog.API.Models;
 using Blog.API.Models.DTOs;
 using Blog.API.Models.Entities;
 using Microsoft.EntityFrameworkCore;
+using System.ComponentModel;
 using System.Text.RegularExpressions;
 
 namespace Blog.API.Services
@@ -22,13 +23,25 @@ namespace Blog.API.Services
         {
             _context = context;
         }
+        private List<CommentEntity> GetAllChildren(string parentId)
+        {
+            var currentChildren = _context.CommentEntities.Where(x => x.ParentComment.Id == parentId).Include(x => x.User).ToList();
+            var allChildren = new List<CommentEntity>();
+            allChildren.AddRange(currentChildren);
+            foreach (var child in currentChildren)
+            {
+                var nextChildren = GetAllChildren(child.Id);
+                allChildren.AddRange(nextChildren);
+            }
+            return allChildren;
+        }
         public async Task<List<CommentDTO>> GetNestedComments(string id)
         {
-            if (_context.CommentEntities.Where(x => x.Id == id) == null)
+            if (_context.CommentEntities.FirstOrDefault(x => x.Id == id) == null)
             {
                 throw new NotFoundException("There is no such comment");
             }
-            List<CommentEntity> nestedCommentsEntities = _context.CommentEntities.Where(x => x.ParentComment.Id == id).Include(x => x.User).ToList();
+            List<CommentEntity> nestedCommentsEntities = GetAllChildren(id);
             List<CommentDTO> commentDTOs = new List<CommentDTO>();
             foreach (CommentEntity nestedCommentEntity in nestedCommentsEntities)
             {
@@ -72,13 +85,22 @@ namespace Blog.API.Services
             _context.CommentEntities.Add(newCommentToAdd);
             _context.SaveChangesAsync();
         }
-        public async Task EditComment(string commentId, string content, string userId) //Проверку на то, что нужный юзер редачит коммент будет сделана в контроллере
+        public async Task EditComment(string commentId, string content, string userId) 
         {
+            string commentRegex = @"^$";
+            if (Regex.IsMatch(content, commentRegex))
+            {
+                throw new ValidationException("Comment cannot be empty");
+            }
             if (_context.CommentEntities.Where(x => x.Id == commentId && x.User.Id == userId) == null)
             {
                 throw new ForbiddenException();
             }
             CommentEntity commentToEdit = _context.CommentEntities.FirstOrDefault(x => x.Id == commentId);
+            if (commentToEdit.Content == "[Комментарий удалён]")
+            {
+                throw new ObjectExistsException("You cannot edit deleted comments");
+            }
             if (commentToEdit == null)
             {
                 throw new NotFoundException("There is no such comment");
@@ -98,6 +120,10 @@ namespace Blog.API.Services
             if (commentToDelete == null)
             {
                 throw new NotFoundException("There is no such comment");
+            }
+            if (commentToDelete.Content == "[Комментарий удалён]")
+            {
+                throw new ObjectExistsException("This comment had already been deleted");
             }
             commentToDelete.DeleteDate = DateTime.Now;
             commentToDelete.Content = "[Комментарий удалён]";
