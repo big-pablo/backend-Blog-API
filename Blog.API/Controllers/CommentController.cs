@@ -58,12 +58,12 @@ namespace Blog.API.Controllers
         }
         [HttpPut("{id}")]
         [Authorize]
-        public async Task<ActionResult> EditComment(string commentId, string content)
+        public async Task<ActionResult> EditComment(string id,[FromBody] EditCommentDTO content)
         {
             if (await _innerService.TokenIsInBlackList(HttpContext.Request.Headers)) return Unauthorized("The user is not authorized");
             try
             {
-                await _commentService.EditComment(commentId, content, await _innerService.GetUserId(HttpContext.User));
+                await _commentService.EditComment(id, content.Content, await _innerService.GetUserId(HttpContext.User));
                 return Ok();
             }
             catch (ForbiddenException exception)
@@ -81,12 +81,12 @@ namespace Blog.API.Controllers
         }
         [HttpDelete("{id}")]
         [Authorize]
-        public async Task<ActionResult> DeleteComment(string commentId)
+        public async Task<ActionResult> DeleteComment(string id)
         {
             if (await _innerService.TokenIsInBlackList(HttpContext.Request.Headers)) return Unauthorized("The user is not authorized");
             try
             {
-                await _commentService.DeleteComment(commentId, await _innerService.GetUserId(HttpContext.User));
+                await _commentService.DeleteComment(id, await _innerService.GetUserId(HttpContext.User));
                 return Ok();
             }
             catch (ForbiddenException exception)

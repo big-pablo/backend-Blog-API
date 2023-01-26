@@ -10,7 +10,7 @@ namespace Blog.API.Services
 {
     public interface IPostService
     {
-        public Task<PostPagedListDTO> GetPage(string author, PostSortingEnum sorting, int page, int size, int? minReadingTime, int? maxReadingTime, List<string>? tags);
+        public Task<PostPagedListDTO> GetPage(string userId, string author, PostSortingEnum sorting, int page, int size, int? minReadingTime, int? maxReadingTime, List<string>? tags);
         public Task<PostFullDTO> GetCertainPost(string id);
         public Task AddLike(string postId, string userId);
         public Task RemoveLike(string postId, string userId);
@@ -49,7 +49,7 @@ namespace Blog.API.Services
             }
             return false;
         }
-        public async Task<PostPagedListDTO> GetPage(string author, PostSortingEnum sorting, int page, int size, int? minReadingTime, int? maxReadingTime, List<string>? tags)
+        public async Task<PostPagedListDTO> GetPage(string userId, string author, PostSortingEnum sorting, int page, int size, int? minReadingTime, int? maxReadingTime, List<string>? tags)
         {
             List<PostEntity> postEntites = _context.PostEntities.Include(x => x.Tags).Include(x => x.Author).ThenInclude(j => j.UserPosts).ToList();
             if (minReadingTime == null)
@@ -74,6 +74,11 @@ namespace Blog.API.Services
                 List<CommentEntity> comments = _context.CommentEntities.Where(x => x.Post.Id == post.Id).ToList();
                 List<LikeEntity> likes = _context.LikeEntities.Where(x => x.Post.Id == post.Id).ToList();
                 List<TagDTO> tagList = new List<TagDTO>();
+                bool hasLike = false;
+                if (_context.LikeEntities.FirstOrDefault(x => x.User.Id == userId && x.Post.Id == post.Id) != null)
+                {
+                    hasLike = true;
+                }
                 foreach (TagEntity tagEntity in post.Tags)
                 {
                     tagList.Add(new TagDTO()
@@ -94,7 +99,7 @@ namespace Blog.API.Services
                         AuthorId = post.Author.Id,
                         Author = post.Author.FullName,
                         Likes = likes.Count(),
-                        HasLike = false,
+                        HasLike = hasLike,
                         CommentsCount = comments.Count(),
                         Tags = tagList,
                         Created = post.Created
@@ -112,7 +117,7 @@ namespace Blog.API.Services
                         AuthorId = post.Author.Id,
                         Author = post.Author.FullName,
                         Likes = likes.Count(),
-                        HasLike = false,
+                        HasLike = hasLike,
                         CommentsCount = comments.Count(),
                         Tags = tagList,
                         Created = post.Created

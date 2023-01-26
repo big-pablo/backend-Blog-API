@@ -9,5 +9,6 @@
         public CommentEntity? ParentComment { get; set; }
         public DateTime? ModifiedDate { get; set; }
         public DateTime? DeleteDate { get; set; }
+        public DateTime CreateDate { get; set; }
     }
 }

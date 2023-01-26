@@ -8,6 +8,7 @@ namespace Blog.API.Models.DTOs
         public string Id { get; set; }
         [MinLength(1)]
         public string Content { get; set; }
+        public DateTime CreateDate { get; set; }
         public DateTime? ModifiedDate { get; set; }
         public DateTime? DeleteDate { get; set; }
         [Required]

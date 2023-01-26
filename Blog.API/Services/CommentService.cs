@@ -2,6 +2,7 @@
 using Blog.API.Models;
 using Blog.API.Models.DTOs;
 using Blog.API.Models.Entities;
+using Microsoft.EntityFrameworkCore;
 using System.Text.RegularExpressions;
 
 namespace Blog.API.Services
@@ -27,7 +28,7 @@ namespace Blog.API.Services
             {
                 throw new NotFoundException("There is no such comment");
             }
-            List<CommentEntity> nestedCommentsEntities = _context.CommentEntities.Where(x => x.ParentComment.Id == id).ToList();
+            List<CommentEntity> nestedCommentsEntities = _context.CommentEntities.Where(x => x.ParentComment.Id == id).Include(x => x.User).ToList();
             List<CommentDTO> commentDTOs = new List<CommentDTO>();
             foreach (CommentEntity nestedCommentEntity in nestedCommentsEntities)
             {
@@ -39,7 +40,8 @@ namespace Blog.API.Services
                     DeleteDate = nestedCommentEntity.DeleteDate,
                     AuthorId = nestedCommentEntity.User.Id,
                     Author = nestedCommentEntity.User.FullName,
-                    SubComments = _context.CommentEntities.Where(x => x.ParentComment.Id == nestedCommentEntity.Id).ToList().Count()
+                    SubComments = _context.CommentEntities.Where(x => x.ParentComment.Id == nestedCommentEntity.Id).ToList().Count(),
+                    CreateDate = nestedCommentEntity.CreateDate
                 });
             }
             return commentDTOs;
@@ -50,7 +52,7 @@ namespace Blog.API.Services
             {
                 throw new NotFoundException("There is no such comment");
             }
-            string commentRegex = @"\ *";
+            string commentRegex = @"^$";
             if (Regex.IsMatch(content, commentRegex))
             {
                 throw new ValidationException("Comment cannot be empty");
@@ -64,7 +66,8 @@ namespace Blog.API.Services
                 User = _context.UserEntities.FirstOrDefault(x => x.Id == userId),
                 ParentComment = _context.CommentEntities.FirstOrDefault(x => x.Id == parentCommentId),
                 ModifiedDate = null,
-                DeleteDate = null
+                DeleteDate = null,
+                CreateDate = DateTime.Now
             };
             _context.CommentEntities.Add(newCommentToAdd);
             _context.SaveChangesAsync();

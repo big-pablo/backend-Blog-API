@@ -27,7 +27,7 @@ namespace Blog.API.Services
         }
         public async Task<string> GetUserId(ClaimsPrincipal principal)
         {
-            return principal.Claims.SingleOrDefault(p => p.Type == ClaimTypes.NameIdentifier).Value;
+             return principal?.Claims?.SingleOrDefault(p => p.Type == ClaimTypes.NameIdentifier)?.Value;
         }
         public async Task<bool> TokenIsInBlackList(IHeaderDictionary headerDictionary)
         {

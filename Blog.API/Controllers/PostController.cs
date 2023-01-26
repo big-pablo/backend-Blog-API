@@ -20,15 +20,22 @@ namespace Blog.API.Controllers
             _postService = postService;
             _innerService = innerService;
         }
-        [Authorize]
+        [AllowAnonymous]
         [HttpGet]
         public async Task<ActionResult<List<PostDTO>>> GetPosts([FromQuery] List<string>? tags, string? author, [FromQuery] int? min, [FromQuery] int? max, [FromQuery] PostSortingEnum sorting, [FromQuery] int page=1, [FromQuery] int size = 6)
         {
-            if (await _innerService.TokenIsInBlackList(HttpContext.Request.Headers)) return Unauthorized("The user is not authorized");
-
+            string id;
             try
             {
-                return Ok(await _postService.GetPage(author, sorting, page, size, min, max, tags));
+                id = await _innerService.GetUserId(HttpContext.User);
+            }
+            catch
+            {
+                id = "";
+            }
+            try
+            {
+                return Ok(await _postService.GetPage(id, author, sorting, page, size, min, max, tags));
             }
             catch (NotFoundException exception)
             {
@@ -39,11 +46,11 @@ namespace Blog.API.Controllers
                 return StatusCode(500, exception.Message);
             }   
         }
-        [Authorize]
+        [AllowAnonymous]
         [HttpGet("{id}")]
         public async Task<ActionResult<PostFullDTO>> GetCertainPost(string id)
         {
-            if (await _innerService.TokenIsInBlackList(HttpContext.Request.Headers)) return Unauthorized("The user is not authorized");
+            //if (await _innerService.TokenIsInBlackList(HttpContext.Request.Headers)) return Unauthorized("The user is not authorized");
             try
             {
                 return Ok(await _postService.GetCertainPost(id));
