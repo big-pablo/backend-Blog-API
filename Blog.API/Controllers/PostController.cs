@@ -50,7 +50,6 @@ namespace Blog.API.Controllers
         [HttpGet("{id}")]
         public async Task<ActionResult<PostFullDTO>> GetCertainPost(string id)
         {
-            //if (await _innerService.TokenIsInBlackList(HttpContext.Request.Headers)) return Unauthorized("The user is not authorized");
             try
             {
                 return Ok(await _postService.GetCertainPost(id));
